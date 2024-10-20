@@ -3,6 +3,7 @@
 
 #include <logger.h>
 #include <map>
+#include <fstream>
 #include "client_logger_builder.h"
 
 class client_logger final :

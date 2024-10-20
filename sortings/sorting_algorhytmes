@@ -1,0 +1,366 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <functional>
+#include <concepts>
+#include <type_traits>
+#include <algorithm>
+
+template <typename T>
+class Sort 
+{
+public:
+    virtual void sort(std::vector<T>& vec) = 0;  
+    virtual ~Sort() noexcept = default;
+};
+
+template <typename T>
+class CountingSort final : public Sort<T> 
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+public:
+    CountingSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) override 
+    {
+        std::cout << "Counting Sort was used: " << std::endl;
+
+        if (vec.size() <= 1) 
+            return;  
+
+        std::vector<int> count(vec.size(), 0);
+
+        for (int i = vec.size() - 1; i >= 1; --i)
+        {
+            for (int j = i - 1; j >= 0; --j) 
+            {
+                if (comparator(vec[i], vec[j])) 
+                    count[j]++;
+
+                else 
+                    count[i]++;
+
+            }
+        }
+
+        std::vector<T> sortedVec(vec.size());
+
+        for (int i = 0; i < vec.size(); ++i) {
+            sortedVec[count[i]] = vec[i];
+        }
+
+        vec = sortedVec;
+    }
+};
+
+template <typename T>
+class InsertionSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+public:
+    InsertionSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) override
+    {
+        std::cout << "Insertion Sort was used: " << std::endl;
+        for (int j = 1; j < vec.size(); ++j)
+        {
+            T k = vec[j];
+            int i = j - 1;
+
+            while (i >= 0 && comparator(k, vec[i]))
+            {
+                vec[i + 1] = vec[i];
+                --i;
+            }
+            vec[i + 1] = k;
+        }
+    }
+};
+
+
+template <typename T>
+class ShellSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+
+public:
+    ShellSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) override
+    {
+        std::cout << "Shell Sort was used: " << std::endl;
+
+        for (int h = vec.size() / 2; h > 0; h /= 2)
+        {
+            for (int j = h; j < vec.size(); ++j)
+            {
+                T k = vec[j];
+                int i = j - h;
+
+                while (i >= 0 && comparator(k, vec[i]))
+                {
+                    vec[i + h] = vec[i];
+                    i -= h;
+                }
+
+                vec[i + h] = k;
+            }
+        }
+    }
+};
+
+template <typename T>
+class SelectionSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+
+public:
+    SelectionSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) override
+    {
+        std::cout << "Selection Sort was used: " << std::endl;
+
+        for (int j = vec.size() - 1; j >= 1; --j)
+        {
+            int min = j;
+            for (int i = j - 1; i >= 0; --i)
+            {
+                if (comparator(vec[min], vec[i]))
+                {
+                    min = i;
+                }
+            }
+            if (min != j)
+            {
+                std::swap(vec[j], vec[min]);
+            }
+        }
+    }
+};
+
+template <typename T>
+class HeapSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+
+    void pull(std::vector<T>& vec, int l, int r)
+    {
+        T k = vec[l];
+        int j = l; // H3
+
+        while (2 * j + 1 <= r) //H4
+        {
+            int i = 2 * j + 1;
+            if (i < r && comparator(vec[i], vec[i + 1])) //H5
+            {
+                ++i;
+            }
+
+            if (comparator(vec[i], k)) //H6
+            {
+                break;
+            }
+            vec[j] = vec[i]; //H7
+            j = i;
+        }
+        vec[j] = k; //H8
+    }
+
+public:
+    HeapSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) 
+    {
+        std::cout << "Heap Sort was used: " << std::endl; 
+
+        for (int l = (vec.size() / 2) - 1; l >= 0; --l) // H1: l = (vec.size() / 2) - 1 ; H2(1): if l > 1
+        {
+            pull(vec, l, vec.size() - 1);
+        }
+
+        for (int r = vec.size() - 1; r > 0; --r) // r = N ; H2(2): if l = 1
+        {
+            std::swap(vec[0], vec[r]);
+            pull(vec, 0, r - 1);
+        }
+    }
+
+};
+
+template <typename T>
+class QuickSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+    static int partition(std::vector<T>& vec, int l, int r, std::function<bool(const T&, const T&)> comp) noexcept
+    {
+        int i = l - 1;
+
+        T pivot = vec[r];
+
+        for (int j = l; j < r; ++j)
+        {
+            if (comp(vec[j], pivot))
+            {
+                ++i;
+                std::swap(vec[i], vec[j]);
+            }
+        }
+
+        std::swap(vec[i + 1], vec[r]);
+        return i + 1;
+    }
+
+    static void quickSort(std::vector<T>& vec, int l, int r, std::function<bool(const T&, const T&)> comp) noexcept
+    {
+        if (l < r)
+        {
+            int i = partition(vec, l, r, comp);
+            quickSort(vec, l, i - 1, comp);
+            quickSort(vec, i + 1, r, comp);
+        }
+    }
+    
+public:
+    QuickSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) override
+    {
+        std::cout << "Quick Sort was used: " << std::endl;
+        QuickSort::quickSort(vec, 0, vec.size() - 1, comparator);
+    }
+};
+
+template <typename T>
+concept Integral = std::is_integral_v<T>;
+
+template <Integral T>
+class RadixSort final : public Sort<T>
+{
+private:
+    std::function<bool(const T&, const T&)> comparator;
+
+    void countingSort(std::vector<T>& vec, int exp)
+    {
+        int n = vec.size();
+        std::vector<T> output(n);
+
+        int R = 10;
+        std::vector<int> count(R + 1, 0);
+
+        for (int i = 0; i < n; i++)
+        {
+            int digit = (vec[i] / exp) % 10;
+            count[digit + 1]++;
+        }
+
+        for (int r = 0; r < R; r++)
+        {
+            count[r + 1] += count[r];
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            int digit = (vec[i] / exp) % 10;
+            output[count[digit]++] = vec[i];
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            vec[i] = output[i];
+        }
+    }
+
+public:
+    RadixSort(std::function<bool(const T&, const T&)> comp) : comparator(comp) {}
+
+    void sort(std::vector<T>& vec) 
+    {
+        std::cout << "Radix Sort (LSD) was used: " << std::endl;
+
+        T max_value = *std::max_element(vec.begin(), vec.end());
+
+        for (int exp = 1; max_value / exp > 0; exp *= 10) 
+        {
+            countingSort(vec, exp);
+        }
+    }
+};
+
+int main()
+{
+    std::vector<int> vec1 = { 2024, 1104, 19, 1, 1987, 666095, 1719 };
+    std::vector<int> vec2 = { 34554, 234, 1, 4566 };
+    std::vector<int> vec3 = { 9854, 432, 3564, 32, 5, 57757, 35, 4 };
+    std::vector<int> vec4 = { 9, 2, 4, 1, 5, 6, 3 };
+    std::vector<int> vec5 = { 34856, 3285, 24, 65, 5, 7 };
+    std::vector<int> vec6 = { 54685, 34, 36575, 234, 35, 57 };
+    std::vector<int> vec7 = { 86, 35, 6889, 34, 2456, 7, 1 };
+
+    std::function<bool(const int&, const int&)> comp = [](const int& a, const int& b) { return a < b; };
+
+    CountingSort<int> countingSorter(comp);
+    countingSorter.sort(vec1);
+    for (const int& i : vec1)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    InsertionSort<int> insertionSorter(comp);
+    insertionSorter.sort(vec2);
+    for (const int& i : vec2)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    ShellSort<int> shellSorter(comp);
+    shellSorter.sort(vec3);
+    for (const int& i : vec3)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    SelectionSort<int> selectionSorter(comp);
+    selectionSorter.sort(vec4);
+    for (const int& i : vec4)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    HeapSort<int> heapSorter(comp);
+    heapSorter.sort(vec5);
+    for (const int& i : vec5)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    QuickSort<int> quickSorter(comp);
+    quickSorter.sort(vec6);
+    for (const int& i : vec6)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    RadixSort<int> radixSorter(comp);
+    radixSorter.sort(vec7);
+    for (const int& i : vec7)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    return 0;
+}

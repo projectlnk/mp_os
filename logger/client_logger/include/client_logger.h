@@ -17,6 +17,10 @@ private:
     std::string format;
 
 private:
+
+    std::string getFormatString(const std::string& text,
+        logger::severity severity);
+private:
     client_logger(std::map<std::string, unsigned char> file_info, std::string file_name);
 
 public:

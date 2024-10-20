@@ -1,16 +1,17 @@
 #ifndef MATH_PRACTICE_AND_OPERATING_SYSTEMS_CLIENT_LOGGER_H
 #define MATH_PRACTICE_AND_OPERATING_SYSTEMS_CLIENT_LOGGER_H
 
-#include <logger.h>
 #include <map>
 #include <fstream>
 #include "client_logger_builder.h"
+#include "logger.h"
 
 class client_logger final :
     public logger
 {
 
     friend class client_logger_builder;
+
 private:
 
     static std::map <std::string, std::pair<std::ofstream*, int>> logger_info;
@@ -18,9 +19,9 @@ private:
     std::string format;
 
 private:
-
     std::string getFormatString(const std::string& text,
-        logger::severity severity);
+        logger::severity severity) const;
+
 private:
     client_logger(std::map<std::string, unsigned char> file_info, std::string file_name);
 
